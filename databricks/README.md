@@ -62,8 +62,8 @@ export TARGET=dev                        # or 'prod'
 2. **`data`** — deploys + runs the `load_toy_data` job. This reads the four
    CSVs from `../data/toy/` (synced into the workspace by the bundle) and
    writes them as Delta tables in `$CATALOG.$SCHEMA`.
-3. **`app`** — deploys the Databricks App (named `variant-prevalence` by
-   default) and prints its URL.
+3. **`app`** — deploys the Databricks App (named
+   `variant-prevalence-dashboard` by default) and prints its URL.
 
 You can also run each step individually:
 
@@ -81,13 +81,13 @@ You can also run each step individually:
   that ingests the four CSVs into `$CATALOG.$SCHEMA.{subtypes, samples,
   gene_pathways, variants}`. In `dev` target the schema name is suffixed
   with your short username so multiple developers don't collide.
-- **Databricks App** `variant-prevalence` — hosts the Dash app. The app
-  runtime sets `DATABRICKS_APP_PORT`; `app/config.py` picks it up
-  automatically. The app is configured with:
+- **Databricks App** `variant-prevalence-dashboard` — hosts the Dash app.
+  The app runtime sets `DATABRICKS_APP_PORT`; `app/config.py` picks it up
+  automatically. The bundle configures the app with:
   - `DASHBOARD_DATA_BACKEND=delta`
   - `DASHBOARD_CATALOG`, `DASHBOARD_SCHEMA`
-  - `DATABRICKS_WAREHOUSE_ID` (via the app's declared resource binding)
-  - OAuth workspace identity (no tokens baked in).
+  - `DATABRICKS_WAREHOUSE_ID`
+  - OAuth workspace identity (no tokens baked into the image).
 
 ---
 
@@ -138,5 +138,4 @@ default to the same arguments the job uses.
 | App page loads but shows empty chart                | Confirm the job wrote non-empty tables: `SELECT COUNT(*) FROM $CATALOG.$SCHEMA.variants`. |
 | `403 on /sql/1.0/warehouses/...`                    | Grant the app's service principal `CAN USE` on the Warehouse.                  |
 
-See `plan.md` §4b (Phase 2) for the task list and recommended models to
-iterate on each piece.
+See `../plan.md` §4b (Phase 2) for the matching task list.

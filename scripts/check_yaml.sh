@@ -1,15 +1,29 @@
 #!/usr/bin/env bash
-set -eu
-MF="$HOME/miniforge3"
+# Syntax-check every YAML file under databricks/ plus environment.yml.
+set -euo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
-source "$MF/etc/profile.d/conda.sh"
-conda activate pecan-dash
-cd /mnt/c/DinMA/Projects/Dashboard_Dev
+source "${HERE}/_lib.sh"
+activate_env
+cd "${REPO_ROOT}"
+
 python - <<'PY'
-import yaml, pathlib
-root = pathlib.Path("databricks")
-for p in sorted(list(root.glob("*.yml")) + list(root.glob("*.yaml"))):
+import pathlib
+
+try:
+    import yaml
+except ImportError:
+    import subprocess, sys
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", "pyyaml"])
+    import yaml
+
+targets = sorted(
+    list(pathlib.Path("databricks").glob("*.yml"))
+    + list(pathlib.Path("databricks").glob("*.yaml"))
+    + [pathlib.Path("environment.yml")]
+)
+for p in targets:
     yaml.safe_load(p.read_text())
     print(f"{p} -> OK")
-print("environment.yml ->", type(yaml.safe_load(open("environment.yml").read())).__name__)
 PY

@@ -36,10 +36,10 @@ import pandas as pd
 from app.config import Config
 from app.data_loader import (
     DataBundle,
-    _validate_gene_pathways,
-    _validate_samples,
-    _validate_subtypes,
-    _validate_variants,
+    validate_gene_pathways,
+    validate_samples,
+    validate_subtypes,
+    validate_variants,
 )
 
 log = logging.getLogger(__name__)
@@ -211,10 +211,10 @@ def _build_bundle(frames: dict[str, pd.DataFrame]) -> DataBundle:
             .astype(int)
         )
 
-    _validate_subtypes(subtypes)
-    _validate_samples(samples, subtypes)
-    _validate_gene_pathways(gene_pathways)
-    _validate_variants(variants, samples)
+    validate_subtypes(subtypes)
+    validate_samples(samples, subtypes)
+    validate_gene_pathways(gene_pathways)
+    validate_variants(variants, samples)
 
     return DataBundle(
         subtypes=subtypes.reset_index(drop=True),

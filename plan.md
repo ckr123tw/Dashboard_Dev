@@ -12,13 +12,13 @@ provided under `data/toy/` for demo + debug purposes.
 
 | Layer              | Choice                                       | Why                                              |
 | ------------------ | -------------------------------------------- | ------------------------------------------------ |
-| Runtime            | Python 3.11 (conda, in WSL Ubuntu)           | Scientific ecosystem, user-requested             |
+| Runtime            | Python 3.11 (conda)                          | Scientific ecosystem, reproducible envs          |
 | Web framework      | Dash 2.x                                     | Python-native, React under the hood              |
 | Charts             | Plotly 5.x                                   | First-class sunburst, stacked bars, SVG export   |
 | Data               | pandas, pyarrow                              | Tabular wrangling                                |
-| Styling            | dash-bootstrap-components + custom CSS       | Quickest route to PeCan-ish layout               |
+| Styling            | dash-bootstrap-components + custom CSS       | Fastest route to a PeCan-style layout            |
 | Tests              | pytest, pytest-mock, dash[testing]           | Unit + component smoke tests                     |
-| Lint / format      | ruff, black                                  | Keep code tidy                                   |
+| Lint / format      | ruff, black                                  | Code hygiene                                     |
 
 ---
 
@@ -40,26 +40,28 @@ Reproduce the **Variants → Prevalence** page core:
    hide/show, "Export SVG".
 5. **Hover tooltips** with per-class variant counts and percentages.
 
-Out of scope for v1 (can be iterated later): ProteinPaint/GenomePaint deep
-links, oncoprint, custom gene-list upload, URL-based deep linking.
+Out of scope for v1 (deferred to follow-ups): ProteinPaint / GenomePaint
+deep links, oncoprint view, custom gene-list upload, URL-based deep
+linking.
 
 ---
 
 ## 3. Repository layout
 
 ```
-Dashboard_Dev/
+.
 ├── plan.md                      ← this file
 ├── README.md
 ├── environment.yml              ← conda env spec
 ├── requirements.txt             ← pip fallback
-├── pyproject.toml               ← ruff/black/pytest config
+├── pyproject.toml               ← ruff / black / pytest config
 ├── app/
 │   ├── __init__.py
 │   ├── main.py                  ← Dash entry point
 │   ├── config.py
-│   ├── data_loader.py           ← reads CSV/parquet, validates schema
-│   ├── prevalence.py            ← core prevalence math
+│   ├── data_loader.py           ← CSV / parquet ingest + schema validation
+│   ├── databricks_loader.py     ← Delta-backed loader (added in Phase 2)
+│   ├── prevalence.py            ← prevalence math
 │   ├── components/
 │   │   ├── sunburst.py
 │   │   ├── prevalence_chart.py
@@ -73,12 +75,20 @@ Dashboard_Dev/
 │       ├── subtypes.csv
 │       ├── variants.csv
 │       └── gene_pathways.csv
+├── databricks/                  ← Databricks deployment (Phase 2)
+│   ├── app.yaml
+│   ├── databricks.yml
+│   ├── deploy.sh
+│   ├── notebooks/load_toy_to_delta.py
+│   └── README.md
 ├── docs/
 │   └── data_schema.md
+├── scripts/                     ← setup / test / smoke helpers
 └── tests/
     ├── test_data_loader.py
     ├── test_prevalence.py
-    └── test_app_smoke.py
+    ├── test_app_smoke.py
+    └── test_databricks_loader.py
 ```
 
 ---
@@ -88,8 +98,9 @@ Dashboard_Dev/
 Check off as each task lands. Each item lists the Cursor model best suited for
 the work (based on complexity, not cost).
 
-- [x] **T1. Create conda env in WSL Ubuntu** — install miniforge if absent,
-      `conda env create -f environment.yml`, verify `python -c "import dash"`.
+- [x] **T1. Create conda env** — `scripts/setup_conda_env.sh` creates the
+      env from `environment.yml`, and can bootstrap Miniforge when
+      `INSTALL_MINIFORGE=1` is set.
       _Model:_ `composer-2-fast` (mechanical shell work).
 - [x] **T2. Draft toy datasets + schema doc** — 3 roots (HM/BT/ST), ~8 subtypes
       each, ~300 samples, 4–5 pathways, ~15 genes, ~500 variants. Write
@@ -121,8 +132,8 @@ the work (based on complexity, not cost).
         * Dash callback smoke test (selection → chart figure shape).
       Run `pytest -q` and fix failures.
       _Model:_ `claude-4.6-sonnet-medium-thinking`.
-- [x] **T10. README + run instructions** — how to activate env in WSL and
-      launch the app; how to swap toy data for real data matching the schema.
+- [x] **T10. README + run instructions** — how to create the conda env,
+      launch the app, and swap toy data for real data matching the schema.
       _Model:_ `composer-2-fast`.
 - [ ] **T11. (Stretch) Architecture review** before shipping — sanity-check
       the whole thing against the PeCan reference screenshots.

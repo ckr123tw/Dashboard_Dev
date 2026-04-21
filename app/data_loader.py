@@ -108,10 +108,10 @@ def load_data(data_dir: Path | str) -> DataBundle:
             gene_pathways["display_order"], errors="coerce"
         ).fillna(0).astype(int)
 
-    _validate_subtypes(subtypes)
-    _validate_samples(samples, subtypes)
-    _validate_gene_pathways(gene_pathways)
-    _validate_variants(variants, samples)
+    validate_subtypes(subtypes)
+    validate_samples(samples, subtypes)
+    validate_gene_pathways(gene_pathways)
+    validate_variants(variants, samples)
 
     return DataBundle(
         subtypes=subtypes.reset_index(drop=True),
@@ -121,7 +121,8 @@ def load_data(data_dir: Path | str) -> DataBundle:
     )
 
 
-def _validate_subtypes(df: pd.DataFrame) -> None:
+def validate_subtypes(df: pd.DataFrame) -> None:
+    """Raise :class:`SchemaError` if ``subtypes`` fails cross-row checks."""
     if df["subtype_code"].duplicated().any():
         dups = df.loc[df["subtype_code"].duplicated(), "subtype_code"].tolist()
         raise SchemaError(f"subtypes: duplicate subtype_code values: {dups}")
@@ -134,7 +135,8 @@ def _validate_subtypes(df: pd.DataFrame) -> None:
         raise SchemaError(f"subtypes: parent_code references unknown codes for {orphans}")
 
 
-def _validate_samples(samples: pd.DataFrame, subtypes: pd.DataFrame) -> None:
+def validate_samples(samples: pd.DataFrame, subtypes: pd.DataFrame) -> None:
+    """Raise :class:`SchemaError` if ``samples`` has duplicate ids or dangling FKs."""
     if samples["sample_id"].duplicated().any():
         raise SchemaError("samples: duplicate sample_id")
     leaves = set(subtypes.loc[subtypes["level"] == 2, "subtype_code"])
@@ -145,13 +147,15 @@ def _validate_samples(samples: pd.DataFrame, subtypes: pd.DataFrame) -> None:
         )
 
 
-def _validate_gene_pathways(df: pd.DataFrame) -> None:
+def validate_gene_pathways(df: pd.DataFrame) -> None:
+    """Raise :class:`SchemaError` if ``gene_pathways.gene_list`` is outside the vocabulary."""
     bad = df.loc[~df["gene_list"].isin({"curated", "pan_cancer"}), "gene"].tolist()
     if bad:
         raise SchemaError(f"gene_pathways: gene_list must be curated|pan_cancer; bad rows for {bad[:5]}")
 
 
-def _validate_variants(variants: pd.DataFrame, samples: pd.DataFrame) -> None:
+def validate_variants(variants: pd.DataFrame, samples: pd.DataFrame) -> None:
+    """Raise :class:`SchemaError` if ``variants`` has dangling FKs or invalid classes."""
     sample_ids = set(samples["sample_id"])
     missing_samples = variants.loc[~variants["sample_id"].isin(sample_ids), "variant_id"].tolist()
     if missing_samples:
@@ -167,7 +171,6 @@ def _validate_variants(variants: pd.DataFrame, samples: pd.DataFrame) -> None:
     if bad_origin:
         raise SchemaError(f"variants: unknown origin values: {bad_origin}")
 
-    # Category must match the class bucket.
     expected_category = variants["variant_class"].map(
         lambda c: "point_mutation" if c in POINT_MUTATION_CLASSES else "structural_variant"
     )

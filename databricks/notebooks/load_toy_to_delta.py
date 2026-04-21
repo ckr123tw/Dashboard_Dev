@@ -8,11 +8,11 @@
 # MAGIC Parameters (declared via `dbutils.widgets`, overridable from the Jobs UI
 # MAGIC or Databricks Asset Bundle):
 # MAGIC
-# MAGIC | Widget         | Default                 | Purpose                                               |
-# MAGIC | -------------- | ----------------------- | ----------------------------------------------------- |
-# MAGIC | `catalog`      | `main`                  | Destination Unity Catalog.                            |
-# MAGIC | `schema`       | `variant_dashboard`     | Destination schema (created if missing).              |
-# MAGIC | `data_path`    | `/Workspace/Repos/.../data/toy` | Source directory containing the four CSVs.   |
+# MAGIC | Widget      | Default                                                  | Purpose                                            |
+# MAGIC | ----------- | -------------------------------------------------------- | -------------------------------------------------- |
+# MAGIC | `catalog`   | `main`                                                   | Destination Unity Catalog.                         |
+# MAGIC | `schema`    | `variant_dashboard`                                      | Destination schema (created if missing).           |
+# MAGIC | `data_path` | _(must be supplied — use the bundle's `${workspace.file_path}/data/toy`)_ | Source directory containing the four CSVs. |
 # MAGIC
 # MAGIC The notebook re-uses the same **schema validation** code as the app so
 # MAGIC bad data fails loudly *before* it becomes a runtime issue in the
@@ -22,11 +22,10 @@
 
 dbutils.widgets.text("catalog", "main", "Catalog")
 dbutils.widgets.text("schema", "variant_dashboard", "Schema")
-dbutils.widgets.text(
-    "data_path",
-    "/Workspace/Repos/variant-prevalence-dashboard/data/toy",
-    "CSV source directory",
-)
+# `data_path` has no sensible default: it depends on where the repo is
+# synced. The DAB passes `${workspace.file_path}/data/toy`; for ad-hoc
+# runs, set it to the folder containing the four CSVs.
+dbutils.widgets.text("data_path", "", "CSV source directory (required)")
 
 catalog = dbutils.widgets.get("catalog").strip()
 schema = dbutils.widgets.get("schema").strip()
@@ -39,6 +38,12 @@ if not _IDENT.fullmatch(catalog):
     raise ValueError(f"catalog must be a simple identifier: {catalog!r}")
 if not _IDENT.fullmatch(schema):
     raise ValueError(f"schema must be a simple identifier: {schema!r}")
+if not data_path:
+    raise ValueError(
+        "data_path widget is empty. Pass the path to the directory containing "
+        "the four CSVs (subtypes, samples, gene_pathways, variants). "
+        "The bundle supplies ${workspace.file_path}/data/toy automatically."
+    )
 
 print(f"target: {catalog}.{schema}")
 print(f"source: {data_path}")
@@ -140,15 +145,22 @@ print("row counts:",
 # COMMAND ----------
 
 import sys
-repo_root = "/".join(data_path.split("/")[:-2])  # strip "/data/toy"
-if repo_root not in sys.path:
+
+# The bundle passes data_path = "${workspace.file_path}/data/toy", so the
+# repo root is two levels up. Strip `data/toy` (or `data/<anything>`) off
+# the end to locate the repo.
+_parts = data_path.rstrip("/").split("/")
+if len(_parts) < 2:
+    raise ValueError(f"data_path is too shallow to derive a repo root: {data_path!r}")
+repo_root = "/".join(_parts[:-2])
+if repo_root and repo_root not in sys.path:
     sys.path.insert(0, repo_root)
 
 from app.data_loader import (  # type: ignore  # noqa: E402
-    _validate_gene_pathways,
-    _validate_samples,
-    _validate_subtypes,
-    _validate_variants,
+    validate_gene_pathways,
+    validate_samples,
+    validate_subtypes,
+    validate_variants,
 )
 
 st = subtypes_df.toPandas()
@@ -161,10 +173,10 @@ st["description"] = st["description"].fillna("")
 gp["cancer_root"] = gp["cancer_root"].fillna("")
 gp["display_order"] = gp["display_order"].fillna(0).astype(int)
 
-_validate_subtypes(st)
-_validate_samples(sm, st)
-_validate_gene_pathways(gp)
-_validate_variants(vr, sm)
+validate_subtypes(st)
+validate_samples(sm, st)
+validate_gene_pathways(gp)
+validate_variants(vr, sm)
 
 print("validation OK")
 

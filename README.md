@@ -2,139 +2,144 @@
 
 A Plotly/Dash dashboard modelled on the
 [St. Jude PeCan Variant Prevalence](https://pecan.stjude.cloud/variants/prevalence)
-page, powered by **your own** data via a documented schema. A small toy
-dataset ships under `data/toy/` so you can demo and debug immediately.
+page, powered by **your own** data via a documented ingestion contract. A small
+toy dataset ships under `data/toy/` so you can demo and debug immediately.
 
-See [`plan.md`](plan.md) for the full execution plan and TODO list (with
-recommended Cursor model per task, to resume if interrupted), and
-[`docs/data_schema.md`](docs/data_schema.md) for the data ingestion contract.
+- Execution plan and task list: [`plan.md`](plan.md).
+- Data ingestion contract: [`docs/data_schema.md`](docs/data_schema.md).
+- Databricks deployment: [`databricks/README.md`](databricks/README.md).
 
-## Features (v1)
+## Features
 
-- **Sunburst** navigator over a 3-level disease hierarchy (root → family → leaf).
-- Header stats: N samples · N subjects in the selected cohort.
+- **Sunburst navigator** over a three-level disease hierarchy (root →
+  family → leaf).
+- Header stats: number of samples and subjects in the selected cohort.
 - **Variant Prevalence by Pathway** chart with three vertically stacked rows:
   1. Variant class proportion (stacked to 100 %).
   2. Variant origin (somatic vs germline).
-  3. Per-gene prevalence (% of subjects with ≥1 variant).
-- Filter panel: curated vs pan-cancer gene list, point/structural toggle,
-  reset button, Export SVG.
-- Pathway separators and headers on the chart.
+  3. Per-gene prevalence (% of subjects with ≥ 1 variant).
+- Filter panel: curated vs pan-cancer gene list, point / structural variant
+  toggle, reset, and SVG export.
+- Pathway-group separators and labels on the chart.
 
-## Quick start (WSL Ubuntu + conda)
+## Prerequisites
 
-1. From PowerShell, run the one-shot setup (installs Miniforge into
-   `~/miniforge3` if missing and creates the `pecan-dash` env):
+- A POSIX shell (Linux, macOS, or WSL).
+- `conda` (Miniforge / Miniconda / Anaconda). The setup script can bootstrap
+  Miniforge for you — see below.
 
-   ```powershell
-   wsl -d Ubuntu -- bash /mnt/c/DinMA/Projects/Dashboard_Dev/scripts/setup_wsl_conda.sh
-   ```
+## Quick start
 
-2. Launch the app:
+```bash
+# 1. Create the conda environment (uses an existing conda if present).
+bash scripts/setup_conda_env.sh
+# First-time users without conda installed:
+INSTALL_MINIFORGE=1 bash scripts/setup_conda_env.sh
 
-   ```powershell
-   wsl -d Ubuntu -- bash -lc "source ~/miniforge3/etc/profile.d/conda.sh && conda activate pecan-dash && cd /mnt/c/DinMA/Projects/Dashboard_Dev && python -m app.main"
-   ```
+# 2. Activate the env and launch the app.
+conda activate pecan-dash
+python -m app.main
+# → http://localhost:8050
 
-   Then open <http://localhost:8050> in your Windows browser.
+# 3. Run the test suite.
+bash scripts/run_tests.sh
+```
 
-3. Run the test suite:
-
-   ```powershell
-   wsl -d Ubuntu -- bash /mnt/c/DinMA/Projects/Dashboard_Dev/scripts/run_tests.sh
-   ```
+The scripts resolve the repo root from their own location, so they work from
+any cwd.
 
 ## Repository layout
 
 ```
-app/                # Dash application
-  main.py           # entry point (python -m app.main)
-  config.py         # env-driven config + colour palette
-  data_loader.py    # CSV/parquet ingest + schema validation
-  prevalence.py     # pure-python prevalence math
-  components/       # sunburst, prevalence_chart, filters, layout
-  assets/styles.css # custom styling
-data/toy/           # toy dataset used for demo and tests
-docs/data_schema.md # data ingestion contract
-scripts/            # setup + smoke scripts (WSL bash)
-tests/              # pytest suite (16 tests)
-environment.yml     # conda env spec (Python 3.11)
-plan.md             # execution plan + TODO list (resume-safe)
+app/                      Dash application
+  main.py                 Entry point (python -m app.main)
+  config.py               Env-driven configuration + colour palette
+  data_loader.py          CSV / Parquet ingest + schema validation
+  databricks_loader.py    Delta-backed loader for Databricks deployments
+  prevalence.py           Pure-Python prevalence math
+  components/             sunburst, prevalence_chart, filters, layout
+  assets/styles.css       Custom styling
+data/toy/                 Toy dataset used for demo and tests
+databricks/               Databricks deployment (app.yaml, DAB, notebook)
+docs/data_schema.md       Data ingestion contract
+scripts/                  Setup, test, and smoke scripts
+tests/                    pytest suite
+environment.yml           Conda env spec (Python 3.11)
+plan.md                   Execution plan and TODO list
 ```
-
-## Databricks deployment
-
-The same app runs unchanged on **Databricks Apps** backed by **Unity Catalog
-Delta tables**. Flip the `DASHBOARD_DATA_BACKEND` env var from `csv` to `delta`
-and the app reads from Delta via a SQL Warehouse instead of the local CSVs.
-
-```bash
-cd databricks
-export WAREHOUSE_ID=<your-sql-warehouse-id>
-./deploy.sh all          # validates bundle → loads Delta tables → deploys the App
-```
-
-This creates:
-
-- a Databricks **Job** that loads `data/toy/*.csv` into
-  `main.variant_dashboard.{subtypes,samples,gene_pathways,variants}` (catalog
-  and schema are configurable),
-- a **Databricks App** named `variant-prevalence` hosting the Dash server
-  behind workspace OAuth.
-
-See [`databricks/README.md`](databricks/README.md) for prerequisites, target
-envs (`dev`/`prod`), auth modes, and troubleshooting. The complete task
-breakdown (with model assignments) is in [`plan.md`](plan.md) §4b.
 
 ## Swapping in your own data
 
 1. Produce the four tables described in
    [`docs/data_schema.md`](docs/data_schema.md) (`subtypes`, `samples`,
    `gene_pathways`, `variants`) as CSV or Parquet.
-2. Drop them into a directory, e.g. `data/real/`.
+2. Drop them into a directory, for example `data/real/`.
 3. Launch with:
 
-   ```powershell
-   wsl -d Ubuntu -- bash -lc "source ~/miniforge3/etc/profile.d/conda.sh && conda activate pecan-dash && cd /mnt/c/DinMA/Projects/Dashboard_Dev && DASHBOARD_DATA_DIR=data/real python -m app.main"
+   ```bash
+   DASHBOARD_DATA_DIR=data/real python -m app.main
    ```
 
-The loader performs strict validation and refuses to start if columns or
-controlled-vocabulary values are wrong — the error message tells you what to fix.
+The loader performs strict validation at startup and refuses to run if any
+column is missing or a controlled-vocabulary value is wrong — the error
+message lists what to fix.
+
+## Databricks deployment
+
+The same app runs unchanged on **Databricks Apps** backed by **Unity Catalog
+Delta tables**. Flip `DASHBOARD_DATA_BACKEND` from `csv` to `delta` and the
+app reads via a SQL Warehouse instead of local CSVs.
+
+```bash
+cd databricks
+export WAREHOUSE_ID=<your-sql-warehouse-id>
+./deploy.sh all
+```
+
+This creates:
+
+- a **Job** that loads `data/toy/*.csv` into
+  `<catalog>.<schema>.{subtypes, samples, gene_pathways, variants}` (catalog
+  and schema are configurable),
+- a **Databricks App** hosting the Dash server behind workspace OAuth.
+
+See [`databricks/README.md`](databricks/README.md) for prerequisites, target
+environments (`dev` / `prod`), auth modes, and troubleshooting.
 
 ## Environment variables
 
-| Variable              | Default        | Purpose                                     |
-| --------------------- | -------------- | ------------------------------------------- |
-| `DASHBOARD_DATA_BACKEND` | `csv`       | `csv` (local) or `delta` (Databricks).      |
-| `DASHBOARD_DATA_DIR`  | `data/toy`     | CSV backend: directory with the four tables.|
-| `DASHBOARD_HOST`      | `0.0.0.0`      | Interface to bind.                          |
-| `DASHBOARD_PORT`      | `8050`         | Port to serve on (overridden by `DATABRICKS_APP_PORT` on Databricks Apps). |
-| `DASHBOARD_DEBUG`     | `1`            | Dash debug mode (`0`/`false` to disable).   |
-| `DASHBOARD_CATALOG`   | `main`         | Delta backend: Unity Catalog name.          |
-| `DASHBOARD_SCHEMA`    | `variant_dashboard` | Delta backend: schema within catalog.  |
-| `DATABRICKS_HOST`     | —              | Delta backend: workspace URL.               |
-| `DATABRICKS_TOKEN`    | —              | Delta backend (local dev only): PAT.        |
-| `DATABRICKS_WAREHOUSE_ID` | —          | Delta backend: SQL Warehouse id.            |
+| Variable                 | Default             | Purpose                                                                 |
+| ------------------------ | ------------------- | ----------------------------------------------------------------------- |
+| `DASHBOARD_DATA_BACKEND` | `csv`               | `csv` (local) or `delta` (Databricks).                                  |
+| `DASHBOARD_DATA_DIR`     | `data/toy`          | CSV backend: directory with the four tables.                            |
+| `DASHBOARD_HOST`         | `0.0.0.0`           | Interface to bind.                                                      |
+| `DASHBOARD_PORT`         | `8050`              | Port to serve on (overridden by `DATABRICKS_APP_PORT` on Databricks Apps). |
+| `DASHBOARD_DEBUG`        | `1`                 | Dash debug mode (`0` / `false` to disable).                             |
+| `DASHBOARD_CATALOG`      | `main`              | Delta backend: Unity Catalog name.                                      |
+| `DASHBOARD_SCHEMA`       | `variant_dashboard` | Delta backend: schema within the catalog.                               |
+| `DATABRICKS_HOST`        | —                   | Delta backend: workspace URL.                                           |
+| `DATABRICKS_TOKEN`       | —                   | Delta backend (local dev only): personal access token.                  |
+| `DATABRICKS_WAREHOUSE_ID`| —                   | Delta backend: SQL Warehouse id.                                        |
 
 ## Regenerating the toy dataset
 
-```powershell
-wsl -d Ubuntu -- bash -lc "cd /mnt/c/DinMA/Projects/Dashboard_Dev && python3 scripts/generate_toy_data.py"
+```bash
+python scripts/generate_toy_data.py
 ```
 
-Output is deterministic (seeded); re-running gives the same files.
+Output is deterministic (seeded); re-running produces the same files.
 
 ## Tests
 
-`pytest` covers:
+`bash scripts/run_tests.sh` runs `pytest`, which covers:
 
-- Schema validation (`tests/test_data_loader.py`): column presence, orphan
-  parents, unknown variant classes, sample→subtype FK.
-- Prevalence math (`tests/test_prevalence.py`): exact counts on a
-  hand-rolled 3-sample fixture, empty-cohort edge case, and a range
+- **Schema validation** (`tests/test_data_loader.py`): column presence,
+  orphan parents, unknown variant classes, sample → subtype foreign keys.
+- **Prevalence math** (`tests/test_prevalence.py`): exact counts on a
+  hand-rolled three-sample fixture, empty-cohort edge case, and a range
   invariant on the full toy dataset.
-- Dash wiring (`tests/test_app_smoke.py`): sunburst + prevalence figures
-  build for every root, category filter drops point-mutation traces, and
-  the registered callbacks wire the expected component IDs.
-
-All 16 tests pass on the prototype.
+- **Dash wiring** (`tests/test_app_smoke.py`): sunburst and prevalence
+  figures build for every root, the category filter drops point-mutation
+  traces, and the registered callbacks wire the expected component IDs.
+- **Databricks loader** (`tests/test_databricks_loader.py`): mock-based
+  tests for the Delta loader that reuse the same validation path.

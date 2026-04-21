@@ -27,7 +27,7 @@ TARGET="${TARGET:-dev}"
 CATALOG="${CATALOG:-main}"
 SCHEMA="${SCHEMA:-}"            # empty => use the bundle default (per-target)
 WAREHOUSE_ID="${WAREHOUSE_ID:-}"
-APP_NAME="${APP_NAME:-variant-prevalence}"
+APP_NAME="${APP_NAME:-variant-prevalence-dashboard}"
 
 var_flags=()
 if [[ -n "$CATALOG" ]]; then var_flags+=(--var "catalog=$CATALOG"); fi

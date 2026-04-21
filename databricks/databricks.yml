@@ -28,7 +28,15 @@ variables:
     description: SQL Warehouse id used by both the loader notebook and the app
   app_name:
     description: Databricks Apps name
-    default: variant-prevalence
+    default: variant-prevalence-dashboard
+  node_type_id:
+    description: |
+      Job-cluster node type for the loader job. Defaults to an Azure SKU;
+      override to `i3.xlarge` (AWS) or `n2-standard-4` (GCP).
+    default: Standard_DS3_v2
+  spark_version:
+    description: Databricks Runtime version for the loader job
+    default: 15.4.x-scala2.12
 
 targets:
   dev:
@@ -62,8 +70,8 @@ resources:
       job_clusters:
         - job_cluster_key: small
           new_cluster:
-            spark_version: 15.4.x-scala2.12
-            node_type_id: Standard_DS3_v2  # Azure default; override on AWS/GCP
+            spark_version: ${var.spark_version}
+            node_type_id: ${var.node_type_id}
             num_workers: 1
             data_security_mode: SINGLE_USER
 

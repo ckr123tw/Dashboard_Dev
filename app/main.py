@@ -12,7 +12,6 @@ from app.components.sunburst import build_sunburst_figure
 from app.config import (
     CONFIG,
     POINT_MUTATION_CLASSES,
-    ROOT_LABELS,
     STRUCTURAL_VARIANT_CLASSES,
 )
 from app.data_loader import (
@@ -159,10 +158,12 @@ def create_app(bundle: DataBundle | None = None) -> dash.Dash:
     return app
 
 
-app = create_app() if __name__ != "__main__" else None  # convenience import
-
-
 def main() -> None:
+    """Build the Dash app and run the development server.
+
+    Used both locally (``python -m app.main``) and by Databricks Apps,
+    whose manifest specifies the same start command.
+    """
     application = create_app()
     application.run(host=CONFIG.host, port=CONFIG.port, debug=CONFIG.debug)
 

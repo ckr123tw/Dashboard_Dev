@@ -1,45 +1,15 @@
 # Databricks Apps manifest.
 #
-# Deployed via:
-#   databricks apps deploy variant-prevalence \
-#       --source-code-path /Workspace/Users/<you>/variant-prevalence-dashboard
+# This file declares the start command for the app. Environment variables
+# and resource bindings (SQL Warehouse, catalog/schema names) are supplied
+# by the Databricks Asset Bundle (`databricks.yml`) at deploy time — see
+# the `resources.apps.dashboard` block there.
 #
-# or, via the Asset Bundle in databricks.yml:
-#   databricks bundle deploy -t dev
-#
-# Docs: https://docs.databricks.com/en/dev-tools/databricks-apps/app-development.html
+# Docs: https://docs.databricks.com/aws/dev-tools/databricks-apps/configuration
 
-# Command Databricks Apps will run. The runtime injects DATABRICKS_APP_PORT;
-# app/config.py picks it up automatically.
+# Databricks Apps injects DATABRICKS_APP_PORT at runtime; app/config.py
+# picks it up in preference to DASHBOARD_PORT.
 command:
   - python
   - -m
   - app.main
-
-env:
-  - name: DASHBOARD_DATA_BACKEND
-    value: delta
-  - name: DASHBOARD_DEBUG
-    value: "0"
-  - name: DASHBOARD_CATALOG
-    valueFrom: dashboard_catalog
-  - name: DASHBOARD_SCHEMA
-    valueFrom: dashboard_schema
-  - name: DATABRICKS_WAREHOUSE_ID
-    valueFrom: dashboard_warehouse_id
-
-# App resources: a SQL Warehouse used by the Delta loader. The three
-# `valueFrom` entries above resolve against the resources declared in
-# databricks.yml at bundle-deploy time.
-resources:
-  - name: dashboard_warehouse_id
-    description: SQL warehouse powering the Delta loader
-    sql_warehouse:
-      id: "{{.warehouse_id}}"
-      permission: CAN_USE
-  - name: dashboard_catalog
-    description: Unity Catalog containing the four dashboard tables
-    value: "{{.catalog}}"
-  - name: dashboard_schema
-    description: Schema inside the catalog containing the four tables
-    value: "{{.schema}}"
