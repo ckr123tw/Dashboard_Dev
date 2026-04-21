@@ -1,0 +1,26 @@
+subtype_code,subtype_name,parent_code,root,level,description
+HM,Hematologic Malignancy,,HM,0,Root node for Hematologic Malignancy
+LYMPH,Lymphoid Neoplasm,HM,HM,1,Lymphoid Neoplasm
+BALLETV6RUNX1,B-Cell ALL with ETV6::RUNX1 Fusion,LYMPH,HM,2,B-Cell ALL with ETV6::RUNX1 Fusion
+BALLHYPER,B-Cell ALL with Hyperdiploidy,LYMPH,HM,2,B-Cell ALL with Hyperdiploidy
+TALLNOS,"T-Cell ALL, NOS",LYMPH,HM,2,"T-Cell ALL, NOS"
+MYELO,Myeloid Neoplasm,HM,HM,1,Myeloid Neoplasm
+AMLKMT2A,AML with KMT2A Rearrangement,MYELO,HM,2,AML with KMT2A Rearrangement
+AMLRUNX1,AML with RUNX1::RUNX1T1 Fusion,MYELO,HM,2,AML with RUNX1::RUNX1T1 Fusion
+MDS,Myelodysplastic Syndrome,MYELO,HM,2,Myelodysplastic Syndrome
+BT,Brain Tumor,,BT,0,Root node for Brain Tumor
+GLIOMA,Glioma,BT,BT,1,Glioma
+HGGH3K27,"High-Grade Glioma, H3 K27-altered",GLIOMA,BT,2,"High-Grade Glioma, H3 K27-altered"
+LGG,Low-Grade Glioma,GLIOMA,BT,2,Low-Grade Glioma
+EMBR,Embryonal Tumor,BT,BT,1,Embryonal Tumor
+MBSHH,"Medulloblastoma, SHH-activated",EMBR,BT,2,"Medulloblastoma, SHH-activated"
+MBWNT,"Medulloblastoma, WNT-activated",EMBR,BT,2,"Medulloblastoma, WNT-activated"
+ATRT,Atypical Teratoid/Rhabdoid Tumor,EMBR,BT,2,Atypical Teratoid/Rhabdoid Tumor
+ST,Solid Tumor,,ST,0,Root node for Solid Tumor
+SARC,Sarcoma,ST,ST,1,Sarcoma
+OS,Osteosarcoma,SARC,ST,2,Osteosarcoma
+EWS,Ewing Sarcoma,SARC,ST,2,Ewing Sarcoma
+RMSALV,Alveolar Rhabdomyosarcoma,SARC,ST,2,Alveolar Rhabdomyosarcoma
+NEUR,Neural Tumor,ST,ST,1,Neural Tumor
+NBMYCN,"Neuroblastoma, MYCN-amplified",NEUR,ST,2,"Neuroblastoma, MYCN-amplified"
+NBNOS,"Neuroblastoma, NOS",NEUR,ST,2,"Neuroblastoma, NOS"

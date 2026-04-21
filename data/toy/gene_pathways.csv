@@ -1,0 +1,37 @@
+gene,pathway,gene_list,cancer_root,display_order
+TP53,Cell Cycle,pan_cancer,,0
+CDKN2A,Cell Cycle,pan_cancer,,1
+CDKN2B,Cell Cycle,pan_cancer,,2
+RB1,Cell Cycle,pan_cancer,,3
+NRAS,RTK/RAS,pan_cancer,,4
+KRAS,RTK/RAS,pan_cancer,,5
+FLT3,RTK/RAS,pan_cancer,,6
+PTPN11,RTK/RAS,pan_cancer,,7
+RUNX1,Transcription,pan_cancer,,8
+ETV6,Transcription,pan_cancer,,9
+PAX5,Transcription,pan_cancer,,10
+IKZF1,Transcription,pan_cancer,,11
+KMT2A,Epigenetic,pan_cancer,,12
+EZH2,Epigenetic,pan_cancer,,13
+DNMT3A,Epigenetic,pan_cancer,,14
+CTNNB1,WNT/SHH,pan_cancer,,15
+PTCH1,WNT/SHH,pan_cancer,,16
+SMO,WNT/SHH,pan_cancer,,17
+TP53,Cell Cycle,curated,HM,0
+FLT3,RTK/RAS,curated,HM,1
+RUNX1,Transcription,curated,HM,2
+ETV6,Transcription,curated,HM,3
+PAX5,Transcription,curated,HM,4
+IKZF1,Transcription,curated,HM,5
+KMT2A,Epigenetic,curated,HM,6
+TP53,Cell Cycle,curated,BT,0
+CDKN2A,Cell Cycle,curated,BT,1
+EZH2,Epigenetic,curated,BT,2
+CTNNB1,WNT/SHH,curated,BT,3
+PTCH1,WNT/SHH,curated,BT,4
+SMO,WNT/SHH,curated,BT,5
+TP53,Cell Cycle,curated,ST,0
+CDKN2A,Cell Cycle,curated,ST,1
+RB1,Cell Cycle,curated,ST,2
+NRAS,RTK/RAS,curated,ST,3
+KRAS,RTK/RAS,curated,ST,4

@@ -1,0 +1,21 @@
+name: pecan-dash
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - pandas>=2.1
+  - numpy>=1.26
+  - pyarrow>=15
+  - plotly>=5.20
+  - dash>=2.16
+  - dash-bootstrap-components>=1.6
+  - flask>=3.0
+  - pytest>=8.0
+  - pytest-mock>=3.12
+  - ruff>=0.4
+  - black>=24.3
+  - pip:
+      - dash[testing]>=2.16
+      - databricks-sql-connector>=3.3
+      - databricks-sdk>=0.30

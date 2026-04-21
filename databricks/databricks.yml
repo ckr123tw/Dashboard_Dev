@@ -1,0 +1,89 @@
+# Databricks Asset Bundle (DAB) for the Variant Prevalence Dashboard.
+#
+# One-shot deploy (from this directory):
+#
+#     databricks bundle validate -t dev
+#     databricks bundle deploy   -t dev
+#     databricks bundle run      -t dev load_toy_data
+#     databricks bundle run      -t dev dashboard
+#
+# Docs: https://docs.databricks.com/en/dev-tools/bundles/
+bundle:
+  name: variant-prevalence-dashboard
+
+# Sync the repo root (parent of this directory) into the workspace so that the
+# notebook can import `app.*` and read the CSVs under data/toy.
+sync:
+  paths:
+    - ..
+
+variables:
+  catalog:
+    description: Unity Catalog where the four dashboard tables live
+    default: main
+  schema:
+    description: Schema inside the catalog containing the four tables
+    default: variant_dashboard
+  warehouse_id:
+    description: SQL Warehouse id used by both the loader notebook and the app
+  app_name:
+    description: Databricks Apps name
+    default: variant-prevalence
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: ${DATABRICKS_HOST}
+    variables:
+      schema: variant_dashboard_${workspace.current_user.short_name}
+  prod:
+    mode: production
+    workspace:
+      host: ${DATABRICKS_HOST}
+      root_path: /Workspace/Shared/variant-prevalence-dashboard
+    run_as:
+      user_name: ${workspace.current_user.userName}
+
+resources:
+  jobs:
+    load_toy_data:
+      name: "[Dashboard] Load toy data into Delta"
+      tasks:
+        - task_key: load
+          notebook_task:
+            notebook_path: ./notebooks/load_toy_to_delta
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+              data_path: ${workspace.file_path}/data/toy
+          job_cluster_key: small
+      job_clusters:
+        - job_cluster_key: small
+          new_cluster:
+            spark_version: 15.4.x-scala2.12
+            node_type_id: Standard_DS3_v2  # Azure default; override on AWS/GCP
+            num_workers: 1
+            data_security_mode: SINGLE_USER
+
+  apps:
+    dashboard:
+      name: ${var.app_name}
+      description: "PeCan-style variant prevalence dashboard"
+      source_code_path: ${workspace.file_path}
+      config:
+        # app.yaml is re-read on deploy; the values here just provide defaults
+        # and a sanity-check layer.
+        command: ["python", "-m", "app.main"]
+        env:
+          - name: DASHBOARD_DATA_BACKEND
+            value: delta
+          - name: DASHBOARD_CATALOG
+            value: ${var.catalog}
+          - name: DASHBOARD_SCHEMA
+            value: ${var.schema}
+          - name: DATABRICKS_WAREHOUSE_ID
+            value: ${var.warehouse_id}
+          - name: DASHBOARD_DEBUG
+            value: "0"
